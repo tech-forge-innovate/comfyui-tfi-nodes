@@ -45,9 +45,19 @@ class AudioURLLoader:
         if not url or not isinstance(url, str):
             raise ValueError("`url` must be a non-empty string")
 
+        # sanitize timeout: requests does not accept 0 or negative values
+        DEFAULT_TIMEOUT = 30
+        try:
+            t = float(timeout) if timeout is not None else DEFAULT_TIMEOUT
+            if t <= 0:
+                print(f"[AudioURLLoader] Provided timeout {timeout} is <= 0; using default {DEFAULT_TIMEOUT}s")
+                t = DEFAULT_TIMEOUT
+        except Exception:
+            t = DEFAULT_TIMEOUT
+
         # Attempt to request the URL (streaming)
         try:
-            resp = requests.get(url, stream=True, timeout=timeout)
+            resp = requests.get(url, stream=True, timeout=t)
         except Exception as e:
             raise RuntimeError(f"Failed to fetch URL {url}: {e}")
 
