@@ -19,8 +19,9 @@ class AudioURLLoader:
             "hidden": {"prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO"},
         }
 
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("local_path",)
+    # Return an Audio object (ComfyUI audio socket type)
+    RETURN_TYPES = ("AUDIO",)
+    RETURN_NAMES = ("audio",)
     FUNCTION = "download_audio"
     CATEGORY = "TFI/IO"
     OUTPUT_NODE = False
@@ -33,8 +34,8 @@ class AudioURLLoader:
         - file_name: optional suggested filename (used only to determine extension)
         - timeout: request timeout in seconds
 
-        Returns:
-        - local file path (string) where the audio is saved
+    Returns:
+    - Audio: an audio object (implemented here as a path to a temp file)
 
         Raises:
         - ValueError for invalid responses or non-audio content-types
@@ -109,5 +110,7 @@ class AudioURLLoader:
                 except Exception:
                     pass
             raise RuntimeError(f"Failed writing audio to disk: {e}")
-
+        # ComfyUI expects the value matching RETURN_TYPES; we provide the
+        # temp file path which downstream audio-aware nodes can consume as an
+        # Audio socket. Keep returning a single-value tuple to match other nodes.
         return (tmp_path,)
