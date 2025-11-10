@@ -31,8 +31,8 @@ class AudioURLLoader:
         }
 
     # Return an Audio object and the loaded duration in seconds
-    RETURN_TYPES = ("AUDIO", "STRING")
-    RETURN_NAMES = ("audio", "loaded_duration")
+    RETURN_TYPES = ("AUDIO", "FLOAT",)
+    RETURN_NAMES = ("audio", "loaded_duration",)
     FUNCTION = "download_audio"
     CATEGORY = "TFI/IO"
     OUTPUT_NODE = False
@@ -251,4 +251,4 @@ class AudioURLLoader:
         except Exception:
             loaded_duration = 0.0
 
-        return (audio_obj, str(round(loaded_duration, 3)))
+        return (audio_obj, loaded_duration)
