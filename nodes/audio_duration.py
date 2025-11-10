@@ -19,7 +19,7 @@ class AudioDuration:
             "hidden": {"prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO"},
         }
 
-    RETURN_TYPES = ("STRING",)
+    RETURN_TYPES = ("FLOAT",)
     RETURN_NAMES = ("duration_seconds",)
     FUNCTION = "get_duration"
     CATEGORY = "TFI/Audio"
@@ -46,8 +46,7 @@ class AudioDuration:
                 audio = MutagenFile(file_path)
                 if audio is not None and hasattr(audio, "info") and getattr(audio.info, "length", None) is not None:
                     duration = float(audio.info.length)
-                    # return as string for compatibility with other nodes
-                    return (str(round(duration, 3)),)
+                    return (duration,)
             except Exception:
                 # fall through to other methods
                 pass
@@ -59,7 +58,7 @@ class AudioDuration:
                 frames = wf.getnframes()
                 rate = wf.getframerate()
                 duration = frames / float(rate)
-                return (str(round(duration, 3)),)
+                return (duration,)
         except wave.Error:
             # not a WAV or unsupported WAV
             pass
