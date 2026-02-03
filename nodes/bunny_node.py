@@ -10,7 +10,7 @@ class BunnyCDNStorageNodeVideoUpload:
         return {
             "required": {
                 # required input is a VIDEO socket (or a path string that points to a video)
-                "filenames": ("STRING", {"multiline": True, "default": ""}),
+                "filenames": (IO.ANY, {}),
                 "index": ("INT", {"default": 0, "min": 0, "max": 1000, "step": 1}),
                 "BUNNY_API_KEY": ("STRING", {"default": ""}),
                 "BUNNY_TOKEN_KEY": ("STRING", {"default": ""}),
