@@ -156,6 +156,14 @@ class BunnyCDNStorageNodeVideoUpload:
 
         # upload using CDNConnector (upload_file accepts a file path or file-like)
         result = connector.upload_file(cdn_path, file_name, str(p))
-        uploaded_url = result.get("filepath", "")
-        print(result)
+        print(result) 
+        # Prefer a signed/tokenized URL generated from the known path,
+        # fall back to whatever upload_file returned in 'filepath'.
+        try:
+            relative_path = f"{cdn_path}/{file_name}" if cdn_path else file_name
+            uploaded_url = connector.generate_url(relative_path)
+        except Exception:
+            uploaded_url = result.get("filepath", "") if isinstance(result, dict) else ""
+
+        print(f"Uploaded to BunnyCDN: {uploaded_url}")
         return (uploaded_url, filenames,)
