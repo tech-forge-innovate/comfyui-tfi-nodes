@@ -17,7 +17,8 @@ class AudioURLLoader:
             }
         }
 
-    RETURN_TYPES = ("AUDIO",)
+    RETURN_TYPES = ("AUDIO", "FLOAT")
+    RETURN_NAMES = ("audio", "duration_seconds")
     FUNCTION = "load_audio"
     CATEGORY = "TFI/Audio"
     
@@ -79,18 +80,21 @@ class AudioURLLoader:
                     if chunk:
                         temp_file.write(chunk)
 
-            # Load audio using torchaudio
+            # Load audio
             waveform, sample_rate = self._load(temp_path)
 
             # Cleanup temporary file
             os.unlink(temp_path)
 
             audio = {"waveform": waveform.unsqueeze(0), "sample_rate": sample_rate}
-            return IO.NodeOutput(audio)
+            # duration in seconds = samples / sample_rate
+            duration_seconds = float(waveform.shape[-1]) / float(sample_rate)
+            return IO.NodeOutput(audio, duration_seconds)
 
         except Exception as e:
             print(f"Error loading audio from URL: {str(e)}")
-            # Return empty audio in case of error
+            # Return empty audio and zero duration in case of error
             waveform = torch.zeros((1, 2, 1))
             sample_rate = 44100
-            return IO.NodeOutput({"waveform": waveform, "sample_rate": sample_rate})
+            audio = {"waveform": waveform, "sample_rate": sample_rate}
+            return IO.NodeOutput(audio, 0.0)
