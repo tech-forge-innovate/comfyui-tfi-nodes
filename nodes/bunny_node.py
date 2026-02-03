@@ -19,11 +19,11 @@ class BunnyCDNStorageNodeVideoUpload:
         }
 
     # Return the uploaded URL
+    OUTPUT_NODE = True
     RETURN_TYPES = ("STRING", IO.ANY,)
     RETURN_NAMES = ("url", "filenames",)
-    FUNCTION = "run"
     CATEGORY = "TFI/Video"
-    OUTPUT_NODE = True
+    FUNCTION = "run"
 
     def run(self, filenames, index, BUNNY_API_KEY, BUNNY_TOKEN_KEY, prompt=None, extra_pnginfo=None):
         # instantiate connector using env vars
@@ -163,6 +163,6 @@ class BunnyCDNStorageNodeVideoUpload:
             uploaded_url = connector.generate_url(relative_path)
         except Exception:
             uploaded_url = result.get("filepath", "") if isinstance(result, dict) else ""
+        return {"ui": {"gifs": [uploaded_url]}, "result": ((uploaded_url, filenames,),)}
 
-        print(f"Uploaded to BunnyCDN: {uploaded_url}")
-        return (uploaded_url, filenames,)
+        # return (uploaded_url, filenames,) 
