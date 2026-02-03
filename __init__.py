@@ -1,4 +1,4 @@
-from nodes.image_node import LoadImageFromURL
+from .nodes.image_node import LoadImageFromURL
 from .nodes.audio_url_loader import AudioURLLoader
 from .nodes.audio_duration import AudioDuration
 from .nodes.bunny_node import BunnyCDNStorageNodeVideoUpload
