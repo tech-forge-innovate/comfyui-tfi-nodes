@@ -10,7 +10,10 @@ class BunnyCDNStorageNodeVideoUpload:
         return {
             "required": {
                 # required input is a VIDEO socket (or a path string that points to a video)
-                "video": ("VIDEO",),
+                "filenames": ("STRING", {"multiline": True, "default": ""}),
+                "index": ("INT", {"default": 0, "min": 0, "max": 1000, "step": 1}),
+                "BUNNY_API_KEY": ("STRING", {"default": ""}),
+                "BUNNY_TOKEN_KEY": ("STRING", {"default": ""}),
             },
             "hidden": {"prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO"},
         }
@@ -21,13 +24,15 @@ class BunnyCDNStorageNodeVideoUpload:
     CATEGORY = "TFI/Video"
     OUTPUT_NODE = True
 
-    def run(self, video, prompt=None, extra_pnginfo=None):
+    def run(self, filenames, index, BUNNY_API_KEY, BUNNY_TOKEN_KEY, prompt=None, extra_pnginfo=None):
         # instantiate connector using env vars
+        api_key = BUNNY_API_KEY or os.getenv("BUNNY_API_KEY") or os.getenv("BUNNY_ACCESS_KEY") or ""
+        token_key = BUNNY_TOKEN_KEY or os.getenv("BUNNY_TOKEN_KEY", "")
         connector = CDNConnector(
-            os.getenv("BUNNY_API_KEY") or os.getenv("BUNNY_ACCESS_KEY") or os.getenv("BUNNY_TOKEN_KEY") or "",
+            api_key,
             os.getenv("BUNNY_STORAGE_ZONE", "product-gennie"),
             os.getenv("BUNNY_STORAGE_REGION", "sg"),
-            os.getenv("BUNNY_TOKEN_KEY", "")
+            token_key,
         )
 
         # Validate local file
@@ -37,6 +42,48 @@ class BunnyCDNStorageNodeVideoUpload:
         # - a dict-like audio/video socket with keys like 'path' or 'filepath'
         # - an object with attributes like 'path', 'filepath', 'file_path', or 'output_path'
         def resolve_path(obj):
+            # list / tuple of filenames or video objects (e.g. from Video Combine VHS)
+            try:
+                if isinstance(obj, (list, tuple)) and obj:
+                    # Special-case structure from Video Combine VHS:
+                    # [ True/False, ["...png", "...mp4", "...-audio.mp4"] ]
+                    if (
+                        len(obj) == 2
+                        and isinstance(obj[0], (bool, int))
+                        and isinstance(obj[1], (list, tuple))
+                    ):
+                        candidates = [
+                            pathlib.Path(s)
+                            for s in obj[1]
+                            if isinstance(s, str)
+                        ]
+
+                        # Prefer main video file (mp4, mov, mkv, webm) and avoid "-audio"
+                        preferred_exts = [".mp4", ".mov", ".mkv", ".webm"]
+                        for p in candidates:
+                            if (
+                                p.suffix.lower() in preferred_exts
+                                and "-audio" not in p.name
+                                and p.exists()
+                            ):
+                                return p
+
+                        # Fallback: first existing path from the list
+                        for p in candidates:
+                            if p.exists():
+                                return p
+
+                    # Generic list/tuple handling: try each element recursively
+                    for item in obj:
+                        try:
+                            p = resolve_path(item)
+                            if p is not None:
+                                return p
+                        except Exception:
+                            continue
+            except Exception:
+                pass
+
             # plain string or Path
             try:
                 if isinstance(obj, (str, pathlib.Path)):
@@ -46,9 +93,25 @@ class BunnyCDNStorageNodeVideoUpload:
             except Exception:
                 pass
 
-            # dict-like
+            # dict-like (e.g. sockets with filenames or paths)
             try:
                 if hasattr(obj, 'get') and callable(obj.get):
+                    # explicit support for typical video combine structures
+                    # that may expose 'filename' or 'filenames'
+                    filenames = obj.get('filenames') or obj.get('filename')
+                    if filenames:
+                        # could be a single string or list
+                        if isinstance(filenames, (list, tuple)):
+                            for f in filenames:
+                                if f:
+                                    p = pathlib.Path(f)
+                                    if p.exists():
+                                        return p
+                        else:
+                            p = pathlib.Path(filenames)
+                            if p.exists():
+                                return p
+
                     for key in ('filepath', 'path', 'file', 'file_path', 'output_path'):
                         v = obj.get(key)
                         if v:
@@ -80,8 +143,11 @@ class BunnyCDNStorageNodeVideoUpload:
 
             # couldn't resolve
             raise FileNotFoundError(f"Local file not found or could not resolve path from video input (type={type(obj)!r}, repr={repr(obj)})")
-
-        p = resolve_path(video)
+        isSucess = filenames[0]
+        if not isSucess:
+            return ("",)
+        path = filenames[1][index]
+        p = resolve_path(path)
 
         # Determine cdn_path and file_name from output_url
         cdn_path = ""
