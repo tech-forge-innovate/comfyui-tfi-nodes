@@ -1,6 +1,6 @@
 import os
 import tempfile
-from typing import IO
+from comfy_api.latest import IO
 import requests
 from urllib.parse import urlparse
 import torch
