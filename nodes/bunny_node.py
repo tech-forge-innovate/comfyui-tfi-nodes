@@ -163,4 +163,4 @@ class BunnyCDNStorageNodeVideoUpload:
             uploaded_url = connector.generate_url(relative_path)
         except Exception:
             uploaded_url = result.get("filepath", "") if isinstance(result, dict) else ""
-        return {"ui": {"url": (uploaded_url,), "filenames": filenames},"result": ((uploaded_url, filenames,),)}
+        return {"ui": {"text": (uploaded_url,)},"result": (uploaded_url, filenames,)}
