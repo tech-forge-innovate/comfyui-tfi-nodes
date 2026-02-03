@@ -2,7 +2,7 @@ import os
 import pathlib
 from urllib.parse import urlparse
 from .BunnyCDNStorage import CDNConnector
-
+from comfy.comfy_types.node_typing import IO
 
 class BunnyCDNStorageNodeVideoUpload:
     @classmethod
@@ -19,7 +19,7 @@ class BunnyCDNStorageNodeVideoUpload:
         }
 
     # Return the uploaded URL
-    RETURN_TYPES = ("STRING",)
+    RETURN_TYPES = ("STRING", IO.ANY,)
     FUNCTION = "run"
     CATEGORY = "TFI/Video"
     OUTPUT_NODE = True
@@ -157,4 +157,4 @@ class BunnyCDNStorageNodeVideoUpload:
         result = connector.upload_file(cdn_path, file_name, str(p))
         uploaded_url = result.get("filepath", "")
 
-        return (uploaded_url,)
+        return (uploaded_url, filenames,)
