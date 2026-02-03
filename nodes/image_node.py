@@ -13,7 +13,7 @@ class LoadImageFromURL:
     @classmethod
     def INPUT_TYPES(self):
         return {"required": {
-            "urls": ("STRING", {"multiline": True, "default": "", "dynamicPrompts": False}),
+            "url": ("STRING", {"multiline": True, "default": "", "dynamicPrompts": False}),
         },
         }
 
