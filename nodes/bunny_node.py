@@ -20,6 +20,7 @@ class BunnyCDNStorageNodeVideoUpload:
 
     # Return the uploaded URL
     RETURN_TYPES = ("STRING", IO.ANY,)
+    RETURN_NAMES = ("url", "filenames",)
     FUNCTION = "run"
     CATEGORY = "TFI/Video"
     OUTPUT_NODE = True
