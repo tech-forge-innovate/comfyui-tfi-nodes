@@ -1,6 +1,6 @@
 import os
 import pathlib
-
+from comfy.comfy_types.node_typing import IO
 
 class CleanupFilenamesNode:
     @classmethod
@@ -9,7 +9,7 @@ class CleanupFilenamesNode:
             "required": {
                 # Expected to be the same structure as Video Combine VHS "Filenames" output:
                 # [ True/False, ["/path/one", "/path/two", ...] ]
-                "filenames": ("STRING", {"multiline": True, "default": ""}),
+                "filenames": (IO.ANY, {}),
             },
         }
 
@@ -26,7 +26,7 @@ class CleanupFilenamesNode:
             success = filenames[0]
             paths = filenames[1] if len(filenames) > 1 else []
         except Exception:
-            return ("Invalid filenames input",)
+            return ("Invalid filenames input", filenames)
 
         if not success:
             return ("No files to delete (success flag is false)",)
