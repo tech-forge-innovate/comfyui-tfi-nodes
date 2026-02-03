@@ -157,5 +157,5 @@ class BunnyCDNStorageNodeVideoUpload:
         # upload using CDNConnector (upload_file accepts a file path or file-like)
         result = connector.upload_file(cdn_path, file_name, str(p))
         uploaded_url = result.get("filepath", "")
-
+        print(result)
         return (uploaded_url, filenames,)
