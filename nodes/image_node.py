@@ -18,20 +18,19 @@ class LoadImageFromURL:
         }
 
     RETURN_TYPES = ("IMAGE", "MASK")
-    RETURN_NAMES = ("images", "masks")
+    RETURN_NAMES = ("image", "mask")
 
     FUNCTION = "convert"
 
     CATEGORY = "TFI/Image"
 
     # INPUT_IS_LIST = False
-    OUTPUT_IS_LIST = (True, True,)
+    OUTPUT_IS_LIST = (False, False,)
 
-    def convert(self, urls):
-        urls = urls.splitlines()
-        images = []
-        masks = []
-        for url in urls:
+    def convert(self, url):
+        image = None
+        mask = None
+        if url.strip() != "":
             if not url.strip().isspace():
                 i = read_image_from_url(url.strip())
                 i = ImageOps.exif_transpose(i)
@@ -39,12 +38,10 @@ class LoadImageFromURL:
                     i = i.point(lambda i: i * (1 / 255))
                 image = i.convert("RGB")
                 image = pil_to_tensor(image)
-                images.append(image)
                 if 'A' in i.getbands():
                     mask = np.array(i.getchannel('A')).astype(np.float32) / 255.0
                     mask = 1. - torch.from_numpy(mask)
                 else:
                     mask = torch.zeros((64, 64), dtype=torch.float32, device="cpu")
-                masks.append(mask.unsqueeze(0))
 
-        return (images, masks, )
+        return (image, mask)
