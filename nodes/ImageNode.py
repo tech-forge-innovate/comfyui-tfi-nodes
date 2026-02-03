@@ -1,16 +1,8 @@
-import base64
-import copy
-import io
-import os
-
 import numpy as np
 import torch
-from PIL import ImageOps, Image, ImageSequence
+from PIL import ImageOps
 
-from nodes import LoadImage
 from comfy.cli_args import args
-from PIL.PngImagePlugin import PngInfo
-from json import JSONEncoder, JSONDecoder
 from .util import pil_to_tensor, read_image_from_url 
 
 
@@ -56,13 +48,3 @@ class LoadImageFromURL:
                 masks.append(mask.unsqueeze(0))
 
         return (images, masks, )
-
-
-NODE_CLASS_MAPPINGS = {
-    "LoadImageFromURL": LoadImageFromURL,
-}
-
-# A dictionary that contains the friendly/humanly readable titles for the nodes
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "LoadImageFromURL": "Load Image From Url",
-}
