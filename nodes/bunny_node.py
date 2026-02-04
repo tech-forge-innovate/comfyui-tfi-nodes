@@ -1,3 +1,4 @@
+import datetime
 import os
 import pathlib
 from urllib.parse import urlparse
@@ -10,7 +11,9 @@ class BunnyCDNStorageNodeVideoUpload:
         return {
             "required": {
                 # required input is a VIDEO socket (or a path string that points to a video)
+                "process_id": ("STRING", {"default": ""}),
                 "filenames": (IO.ANY, {}),
+                "cdn_path": ("STRING", {"default": ""}),
                 "index": ("INT", {"default": 0, "min": 0, "max": 1000, "step": 1}),
                 "BUNNY_API_KEY": ("STRING", {"default": ""}),
                 "BUNNY_TOKEN_KEY": ("STRING", {"default": ""}),
@@ -131,7 +134,7 @@ class BunnyCDNStorageNodeVideoUpload:
     def IS_CHANGED(cls, **kwargs):
         return float("nan")
     
-    def run(self, filenames, index, BUNNY_API_KEY, BUNNY_TOKEN_KEY, prompt=None, extra_pnginfo=None):
+    def run(self, process_id, filenames, cdn_path, index, BUNNY_API_KEY, BUNNY_TOKEN_KEY, prompt=None, extra_pnginfo=None):
         # instantiate connector using env vars
         api_key = BUNNY_API_KEY or os.getenv("BUNNY_API_KEY") or os.getenv("BUNNY_ACCESS_KEY") or ""
         token_key = BUNNY_TOKEN_KEY or os.getenv("BUNNY_TOKEN_KEY", "")
@@ -149,8 +152,11 @@ class BunnyCDNStorageNodeVideoUpload:
         p = self.resolve_path(path)
 
         # Determine cdn_path and file_name from output_url
-        cdn_path = ""
-        file_name = p.name
+        # Prefer a non-empty process_id; otherwise use a timestamp.
+        base_name = process_id.strip() if isinstance(process_id, str) else ""
+        if not base_name:
+            base_name = datetime.datetime.now().strftime("upload_%Y%m%d_%H%M%S")
+        file_name = f"{base_name}{p.suffix}"
 
         # upload using CDNConnector (upload_file accepts a file path or file-like)
         result = connector.upload_file(cdn_path, file_name, str(p))
