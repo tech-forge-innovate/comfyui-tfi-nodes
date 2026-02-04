@@ -1,3 +1,4 @@
+from .nodes.show_url import ShowUrl
 from .nodes.image_node import LoadImageFromURL
 from .nodes.audio_url_loader import AudioURLLoader
 from .nodes.bunny_node import BunnyCDNStorageNodeVideoUpload
@@ -16,6 +17,7 @@ NODE_CLASS_MAPPINGS = {
     "ClampNode": ClampNode,
     "FloorNode": FloorNode,
     "CeilNode": CeilNode,
+    "ShowUrl": ShowUrl,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -30,4 +32,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     ,"ClampNode": "🔒 Clamp"
     ,"FloorNode": "📉 Floor"
     ,"CeilNode": "📈 Ceil"
+    ,"ShowUrl": "Show URL"
 }
