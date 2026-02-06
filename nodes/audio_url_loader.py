@@ -1,5 +1,6 @@
 import os
 import tempfile
+import base64
 from comfy_api.latest import IO
 import requests
 from urllib.parse import urlparse
@@ -14,6 +15,7 @@ class AudioURLLoader:
         return {
             "required": {
                 "url": ("STRING", {"default": "https://example.com/audio.mp3"}),
+                "isBase64": ("BOOLEAN", {"default": False}),
             }
         }
 
@@ -58,27 +60,65 @@ class AudioURLLoader:
             wav = self._f32_pcm(wav)
             return wav, sr
 
-    def load_audio(self, url):
+    def load_audio(self, url, isBase64=False):
         try:
-            # Check if URL is valid
-            parsed_url = urlparse(url)
-            if not parsed_url.scheme or not parsed_url.netloc:
-                raise ValueError(f"Invalid URL: {url}")
+            if isBase64:
+                # Handle base64-encoded audio string (optionally data URI)
+                data = url
+                extension = '.wav'
 
-            # Download audio file
-            response = requests.get(url, stream=True)
-            response.raise_for_status()
+                if data.startswith("data:"):
+                    header, b64data = data.split(",", 1)
+                    # Try to infer extension from MIME type if present
+                    try:
+                        mime_part = header.split(";")[0]  # e.g. data:audio/wav
+                        mime_type = mime_part.split(":", 1)[1]
+                        if "/" in mime_type:
+                            main, subtype = mime_type.split("/", 1)
+                            if main == "audio":
+                                subtype_map = {
+                                    "mpeg": ".mp3",
+                                    "mp3": ".mp3",
+                                    "wav": ".wav",
+                                    "x-wav": ".wav",
+                                    "flac": ".flac",
+                                    "aac": ".aac",
+                                    "m4a": ".m4a",
+                                    "ogg": ".ogg",
+                                    "x-ms-wma": ".wma",
+                                }
+                                extension = subtype_map.get(subtype.lower(), ".wav")
+                    except Exception:
+                        # Fallback to default .wav if parsing fails
+                        pass
+                else:
+                    b64data = data
 
-            # Create temporary file to save the audio
-            extension = os.path.splitext(parsed_url.path)[1].lower()
-            if extension not in AUDIO_EXTENSIONS:
-                extension = '.mp3'  # Default extension if not recognized
+                audio_bytes = base64.b64decode(b64data)
 
-            with tempfile.NamedTemporaryFile(suffix=extension, delete=False) as temp_file:
-                temp_path = temp_file.name
-                for chunk in response.iter_content(chunk_size=8192):
-                    if chunk:
-                        temp_file.write(chunk)
+                with tempfile.NamedTemporaryFile(suffix=extension, delete=False) as temp_file:
+                    temp_path = temp_file.name
+                    temp_file.write(audio_bytes)
+            else:
+                # Check if URL is valid
+                parsed_url = urlparse(url)
+                if not parsed_url.scheme or not parsed_url.netloc:
+                    raise ValueError(f"Invalid URL: {url}")
+
+                # Download audio file
+                response = requests.get(url, stream=True)
+                response.raise_for_status()
+
+                # Create temporary file to save the audio
+                extension = os.path.splitext(parsed_url.path)[1].lower()
+                if extension not in AUDIO_EXTENSIONS:
+                    extension = '.mp3'  # Default extension if not recognized
+
+                with tempfile.NamedTemporaryFile(suffix=extension, delete=False) as temp_file:
+                    temp_path = temp_file.name
+                    for chunk in response.iter_content(chunk_size=8192):
+                        if chunk:
+                            temp_file.write(chunk)
 
             # Load audio
             waveform, sample_rate = self._load(temp_path)
