@@ -103,7 +103,7 @@ class AudioURLLoader:
                 # Check if URL is valid
                 parsed_url = urlparse(url)
                 if not parsed_url.scheme or not parsed_url.netloc:
-                    raise ValueError(f"Invalid URL: {url}")
+                    raise ValueError(f"Invalid URL: {url.strip()[:100]}")
 
                 # Download audio file
                 response = requests.get(url, stream=True)
