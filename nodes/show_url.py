@@ -31,4 +31,5 @@ class ShowUrl():
     def main(self, url=None):
         isValid = self._is_valid_url(url)
         value = url if isValid else "Not updated"
+        print(f"ShowUrl: URL is valid: {isValid}, value: {value}")
         return {"ui": {"bunny_upload_result": (isValid, value,)}}
