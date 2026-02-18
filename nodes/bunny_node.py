@@ -15,8 +15,6 @@ class BunnyCDNStorageNodeVideoUpload:
                 # required input is a VIDEO socket (or a path string that points to a video)
                 "process_id": ("STRING", {"default": ""}),
                 "cdn_path": ("STRING", {"default": ""}),
-                "BUNNY_API_KEY": ("STRING", {"default": ""}),
-                "BUNNY_TOKEN_KEY": ("STRING", {"default": ""}),
             },
             "optional": {
                 "filenames": (IO.ANY, {}),
@@ -231,8 +229,6 @@ class BunnyCDNStorageNodeVideoUpload:
         self,
         process_id,
         cdn_path,
-        BUNNY_API_KEY,
-        BUNNY_TOKEN_KEY,
         filenames=None,
         image=None,
         video=None,
@@ -240,9 +236,9 @@ class BunnyCDNStorageNodeVideoUpload:
         prompt=None,
         extra_pnginfo=None,
     ):
-        # instantiate connector using env vars
-        api_key = BUNNY_API_KEY or os.getenv("BUNNY_API_KEY") or os.getenv("BUNNY_ACCESS_KEY") or ""
-        token_key = BUNNY_TOKEN_KEY or os.getenv("BUNNY_TOKEN_KEY", "")
+        # instantiate connector using env vars only
+        api_key = os.getenv("BUNNY_API_KEY", "")
+        token_key = os.getenv("BUNNY_TOKEN_KEY", "")
         connector = CDNConnector(
             api_key,
             os.getenv("BUNNY_STORAGE_ZONE", "product-gennie"),
