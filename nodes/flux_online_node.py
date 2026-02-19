@@ -38,8 +38,8 @@ class FLUXImageGeneratorOnline:
             },
         }
 
-    RETURN_TYPES = (IO.IMAGE, "FLOAT")
-    RETURN_NAMES = ("image", "image_size_mb")
+    RETURN_TYPES = (IO.IMAGE, "FLOAT", "FLOAT")
+    RETURN_NAMES = ("image", "image_size_mb", "total_megapixels")
     FUNCTION = "generate"
     CATEGORY = "TFI/Image"
 
@@ -95,7 +95,7 @@ class FLUXImageGeneratorOnline:
 
     def _ref_image_to_data_url(self, ref_image: Any):
         """Convert an IMAGE tensor (or list of tensors) into a base64 data URL string
-        and return (data_url, size_mb) based on PNG-encoded bytes.
+        and return (data_url, size_mb, megapixels) based on PNG-encoded bytes.
         """
         if ref_image is None:
             raise ValueError("Reference IMAGE is None")
@@ -111,8 +111,12 @@ class FLUXImageGeneratorOnline:
         size_bytes = buffer.tell()
         image_size_mb = float(size_bytes) / (1024.0 * 1024.0)
 
+        # Megapixels from image resolution
+        width, height = pil_img.size
+        megapixels = float(width * height) / 1_000_000.0
+
         data_url = image_to_base64(pil_img)
-        return data_url, image_size_mb
+        return data_url, image_size_mb, megapixels
 
     def _sample_to_pil(self, sample: Any):
         if isinstance(sample, (list, tuple)) and sample:
@@ -169,24 +173,29 @@ class FLUXImageGeneratorOnline:
         }
 
         total_input_size_mb = 0.0
+        total_input_megapixels = 0.0
 
         # Map ref_1..ref_4 to the API's reference image fields if provided
         if ref_1 is not None:
-            data_url, size_mb = self._ref_image_to_data_url(ref_1)
+            data_url, size_mb, mp = self._ref_image_to_data_url(ref_1)
             payload["input_image"] = data_url
             total_input_size_mb += size_mb
+            total_input_megapixels += mp
         if ref_2 is not None:
-            data_url, size_mb = self._ref_image_to_data_url(ref_2)
+            data_url, size_mb, mp = self._ref_image_to_data_url(ref_2)
             payload["input_image_2"] = data_url
             total_input_size_mb += size_mb
+            total_input_megapixels += mp
         if ref_3 is not None:
-            data_url, size_mb = self._ref_image_to_data_url(ref_3)
+            data_url, size_mb, mp = self._ref_image_to_data_url(ref_3)
             payload["input_image_3"] = data_url
             total_input_size_mb += size_mb
+            total_input_megapixels += mp
         if ref_4 is not None:
-            data_url, size_mb = self._ref_image_to_data_url(ref_4)
+            data_url, size_mb, mp = self._ref_image_to_data_url(ref_4)
             payload["input_image_4"] = data_url
             total_input_size_mb += size_mb
+            total_input_megapixels += mp
 
         async_resp = self._trigger(api_key, model, payload)
         polling_url: Optional[str] = async_resp.get("polling_url")
@@ -215,6 +224,11 @@ class FLUXImageGeneratorOnline:
         # Total size includes all input reference images plus output image
         image_size_mb = total_input_size_mb + output_image_size_mb
 
+        # Total megapixels includes all input reference images plus output image
+        out_width, out_height = img.size
+        output_megapixels = float(out_width * out_height) / 1_000_000.0
+        total_megapixels = total_input_megapixels + output_megapixels
+
         image_tensor = pil_to_tensor(img)
 
-        return (image_tensor, image_size_mb)
+        return (image_tensor, image_size_mb, total_megapixels)

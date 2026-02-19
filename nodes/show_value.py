@@ -6,7 +6,10 @@ class ShowValue:
     @classmethod
     def INPUT_TYPES(cls):
         return {
-            "required": {"value": (IO.ANY, {})},
+            "required": {
+                "value": (IO.ANY, {}),
+                "value_name": (IO.STRING, {"default": "Value", "multiline": False, "dynamicPrompts": False}),
+            },
         }
 
     RETURN_TYPES = ()
@@ -26,8 +29,8 @@ class ShowValue:
             except Exception:
                 return "<unserializable>"
 
-    def main(self, value=None):
+    def main(self, value=None, value_name="Value"):
         display_str = self._to_display_string(value)
-        print(f"ShowValue: Received value: {display_str}")
+        print(f"ShowValue: {value_name}: {display_str}")
         # The UI preview convention mirrors ShowUrl but with a different key
-        return {"ui": {"show_value": (True, display_str,)}}
+        return {"ui": {"show_value": (value_name, display_str,)}}
